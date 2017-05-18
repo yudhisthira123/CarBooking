@@ -8,11 +8,19 @@ import com.example.yudhisthira.carbooking.activity.R;
 import com.example.yudhisthira.carbooking.fragment.BookedCarListFragment;
 import com.example.yudhisthira.carbooking.fragment.CarListFragment;
 
+
 /**
- * Created by Jhordan on 13/10/15.
+ * The type Drawer interactor.
  */
 public class DrawerInteractorImpl implements DrawerInteractor {
 
+
+    /**
+     *
+     * @param item
+     * @param drawerLayout
+     * @param listener
+     */
     @Override
     public void navigateTo(MenuItem item, DrawerLayout drawerLayout, DrawerListener listener) {
 

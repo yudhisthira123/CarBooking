@@ -1,5 +1,9 @@
 package com.example.yudhisthira.carbooking.fragment;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -10,6 +14,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.yudhisthira.carbooking.activity.BookingReceiver;
 import com.example.yudhisthira.carbooking.activity.R;
 import com.example.yudhisthira.carbooking.data.Car;
 import com.example.yudhisthira.carbooking.data.CommonConstants;
@@ -20,9 +25,8 @@ import com.squareup.picasso.Picasso;
 import java.util.List;
 
 /**
- * Created by yudhisthira on 16/05/17.
+ * Created by yudhisthira on 17/05/17.
  */
-
 public class BookedCarDetailsFragment extends Fragment
     implements View.OnClickListener,
         DatabaseHelper.IDatabaseListener{
@@ -38,6 +42,11 @@ public class BookedCarDetailsFragment extends Fragment
 
     private Button          mDeleteBookingBtn;
 
+    /**
+     * New instance booked car details fragment.
+     *
+     * @return the booked car details fragment
+     */
     public static BookedCarDetailsFragment newInstance() {
         return new BookedCarDetailsFragment();
     }
@@ -67,19 +76,30 @@ public class BookedCarDetailsFragment extends Fragment
 
     @Override
     public void onSuccessOperation(int count) {
+        removeAlarm();
         getFragmentManager().popBackStack();
     }
 
+    /**
+     *
+     * @param carList
+     */
     @Override
     public void onSuccessList(List<Car> carList) {
 
     }
 
+    /**
+     *
+     */
     @Override
     public void onFailure() {
 
     }
 
+    /**
+     *
+     */
     private void displayCarInfo() {
 
         mCarNameView1.setText(mCarInfo.getCarName());
@@ -92,9 +112,14 @@ public class BookedCarDetailsFragment extends Fragment
 
         Picasso.with(getContext())
                 .load(string.toString())
+                .error(R.drawable.default_image_icon)
                 .into(mImageView);
     }
 
+    /**
+     *
+     * @param v
+     */
     private void setUpViews(View v) {
         mImageView = (ImageView)v.findViewById(R.id.available_car_image);
         mCarNameView1 = (TextView) v.findViewById(R.id.available_car_name1);
@@ -108,7 +133,24 @@ public class BookedCarDetailsFragment extends Fragment
         mDeleteBookingBtn.setOnClickListener(this);
     }
 
+    /**
+     *
+     */
     private void deleteBooking() {
-        DatabaseWrapper.deleteBooking(getContext(), mCarInfo.getCarBookingTime(), this);
+        DatabaseWrapper.deleteBookingAsync(getContext(), mCarInfo.getCarBookingID(), this);
+    }
+
+    /**
+     *
+     */
+    private void removeAlarm() {
+        Intent intent = new Intent(getContext(), BookingReceiver.class);
+//        intent.setAction(mCarInfo.getCarBookingTime());
+        intent.setAction(mCarInfo.getCarBookingID());
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getContext(), 0, intent, 0);
+
+        AlarmManager am = (AlarmManager)getContext().getSystemService(Context.ALARM_SERVICE);
+        am.cancel(pendingIntent);
     }
 }

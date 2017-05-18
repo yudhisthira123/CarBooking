@@ -1,7 +1,11 @@
 package com.example.yudhisthira.carbooking.fragment;
 
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -10,12 +14,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.DatePicker;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.example.yudhisthira.carbooking.activity.BookingReceiver;
 import com.example.yudhisthira.carbooking.activity.R;
 import com.example.yudhisthira.carbooking.data.Car;
 import com.example.yudhisthira.carbooking.data.CommonConstants;
@@ -27,17 +35,20 @@ import com.example.yudhisthira.carbooking.presenter.IAvailableCarDetailsPresente
 import com.example.yudhisthira.carbooking.view.IAvailableCarDetailView;
 import com.squareup.picasso.Picasso;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
+import java.util.UUID;
 
 /**
- * Created by yudhisthira on 16/05/17.
+ * Created by yudhisthira on 17/05/17.
  */
 
 public class CarDetailsFragment extends Fragment
         implements IAvailableCarDetailView,
         View.OnClickListener,
+        CompoundButton.OnCheckedChangeListener,
         DatePickerDialog.OnDateSetListener,
         TimePickerDialog.OnTimeSetListener,
         DatabaseHelper.IDatabaseListener{
@@ -45,7 +56,7 @@ public class CarDetailsFragment extends Fragment
     private int             mCardID;
     private ImageView       mImageView;
     private TextView        mCarNameView1;
-    private TextView        mCarDaysView1;
+    private EditText        mCarDaysView1;
 
     private Button          mCarDateBtn;
     private Button          mCarTimeBtn;
@@ -53,10 +64,13 @@ public class CarDetailsFragment extends Fragment
     private TextView        mCarTimeView1;
 
     private Button          mCarBookBtn;
+    private CheckBox        mCustomBookingCheck;
 
     private int             mYear, mMonth, mDay, mHour, mMinute;
 
     private Car             mCarInfo;
+
+    private String          mUniqueID;
 
     public static CarDetailsFragment newInstance() {
         return new CarDetailsFragment();
@@ -94,6 +108,7 @@ public class CarDetailsFragment extends Fragment
 
         Picasso.with(getContext())
                 .load(string.toString())
+                .error(R.drawable.default_image_icon)
                 .into(mImageView);
 
     }
@@ -117,11 +132,20 @@ public class CarDetailsFragment extends Fragment
 
         else if(R.id.available_car_time == id) {
             final Calendar c = Calendar.getInstance();
-            mHour = c.get(Calendar.HOUR);
+            mHour = c.get(Calendar.HOUR_OF_DAY);
             mMinute = c.get(Calendar.MINUTE);
 
             TimePickerDialog tp = new TimePickerDialog(getContext(), this, mHour, mMinute, true);
             tp.show();
+        }
+    }
+
+    @Override
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        int id = buttonView.getId();
+
+        if(R.id.custom_booking_check ==  id) {
+            enableDateAndTimeControls(isChecked);
         }
     }
 
@@ -144,7 +168,7 @@ public class CarDetailsFragment extends Fragment
     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
         Calendar c = Calendar.getInstance();
 
-        c.set(Calendar.HOUR, hourOfDay);
+        c.set(Calendar.HOUR_OF_DAY, hourOfDay);
         c.set(Calendar.MINUTE, minute);
 
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
@@ -158,6 +182,10 @@ public class CarDetailsFragment extends Fragment
     public void onSuccessOperation(int count) {
         Log.d("", "");
 
+        setAlarm();
+
+        getFragmentManager().popBackStack();
+
         Toast.makeText(getContext(), "Success", Toast.LENGTH_SHORT).show();
     }
 
@@ -168,19 +196,21 @@ public class CarDetailsFragment extends Fragment
 
     @Override
     public void onFailure() {
-
+        Toast.makeText(getContext(), "Fail to book", Toast.LENGTH_SHORT).show();
     }
 
     private void bookCar() {
         String strValue = mCarDaysView1.getText().toString();
         mCarInfo.setCarBookingDuration(Integer.parseInt(strValue));
-        DatabaseWrapper.addBookingAsync(getContext(), mCarInfo, this);
+        mUniqueID = UUID.randomUUID().toString();
+
+        DatabaseWrapper.addBookingAsync(getContext(), mCarInfo, mUniqueID, this);
     }
 
     private void setUpViews(View v) {
         mImageView = (ImageView)v.findViewById(R.id.available_car_image);
         mCarNameView1 = (TextView) v.findViewById(R.id.available_car_name1);
-        mCarDaysView1 = (TextView) v.findViewById(R.id.available_car_days1);
+        mCarDaysView1 = (EditText) v.findViewById(R.id.available_car_days1);
 
         mCarDateBtn = (Button) v.findViewById(R.id.available_car_date);
         mCarDateBtn.setOnClickListener(this);
@@ -190,7 +220,24 @@ public class CarDetailsFragment extends Fragment
         mCarTimeBtn.setOnClickListener(this);
         mCarTimeView1 = (TextView) v.findViewById(R.id.available_car_time1);
 
+        mCarBookBtn = (Button) v.findViewById(R.id.btnBookCar);
+        mCarBookBtn.setOnClickListener(this);
+
+        mCustomBookingCheck = (CheckBox) v.findViewById(R.id.custom_booking_check);
+        mCustomBookingCheck.setOnCheckedChangeListener(this);
+
+        setDefaultDateAndTime();
+    }
+
+    private void setDefaultDateAndTime() {
         Calendar c = Calendar.getInstance();
+
+        //set Next date always
+        c.set(Calendar.DAY_OF_MONTH, c.get(Calendar.DAY_OF_MONTH) + 1);
+        c.set(Calendar.HOUR_OF_DAY, 9);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         String date = df.format(c.getTime());
         mCarDateView1.setText(date);
@@ -199,7 +246,57 @@ public class CarDetailsFragment extends Fragment
         String time = df.format(c.getTime());
         mCarTimeView1.setText(time);
 
-        mCarBookBtn = (Button) v.findViewById(R.id.btnBookCar);
-        mCarBookBtn.setOnClickListener(this);
+    }
+
+    private void setAlarm() {
+
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            sd.parse(mCarInfo.getCarBookingDate());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        Calendar c = sd.getCalendar();
+
+        Calendar calendar = getTimeCalender();
+
+        c.set(Calendar.HOUR_OF_DAY, calendar.get(Calendar.HOUR_OF_DAY));
+        c.set(Calendar.MINUTE, calendar.get(Calendar.MINUTE));
+        c.set(Calendar.SECOND, calendar.get(Calendar.SECOND));
+
+        final int _id = (int) System.currentTimeMillis();
+
+        Intent intent = new Intent(getContext(), BookingReceiver.class);
+        //intent.setAction(mCarInfo.getCarBookingTime());
+        intent.setAction(mCarInfo.getCarBookingID());
+        intent.putExtra(CommonConstants.CAR_NAME, mCarInfo.getCarName());
+        intent.putExtra(CommonConstants.CAR_BOOKING_TIME, mCarInfo.getCarBookingTime());
+        //intent.putExtra(CommonConstants.CAR_BOOKING_ID, mCarInfo.getCarBookingID());
+        intent.putExtra(CommonConstants.CAR_BOOKING_ID, mUniqueID);
+        intent.putExtra(CommonConstants.NOTIFICATION_ID, _id);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getContext(), 0, intent, 0);
+
+        AlarmManager alarmManager = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), pendingIntent);
+    }
+
+    private Calendar getTimeCalender() {
+        SimpleDateFormat sd = new SimpleDateFormat("HH:mm:ss");
+        try {
+            sd.parse(mCarInfo.getCarBookingTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        Calendar c = sd.getCalendar();
+
+        return c;
+    }
+
+    private void enableDateAndTimeControls(boolean bEnable) {
+        mCarDateBtn.setEnabled(bEnable);
+        mCarTimeBtn.setEnabled(bEnable);
+        mCarDaysView1.setEnabled(bEnable);
     }
 }

@@ -3,12 +3,12 @@ package com.example.yudhisthira.carbooking.model;
 import com.example.yudhisthira.carbooking.data.Car;
 
 /**
- * Created by yudhisthira on 16/05/17.
+ * Created by yudhisthira on 17/05/17.
  */
 
 public interface IAvailableCarDetailModel {
 
-    public interface IAvailabeCarDetailCallback{
+    public interface IAvailableCarDetailCallback {
         /**
          * @param car car
          *
@@ -22,6 +22,6 @@ public interface IAvailableCarDetailModel {
         public void onFailure();
     }
 
-    public void fetchCarDetails(IAvailabeCarDetailCallback callback, String carID);
+    public void fetchCarDetails(IAvailableCarDetailCallback callback, String carID);
 
 }

@@ -9,15 +9,14 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * Created by yudhisthira on 16/05/17.
+ * Created by yudhisthira on 17/05/17.
  */
-
 public class AvailableCarDetailModelImpl implements IAvailableCarDetailModel {
-    private IAvailabeCarDetailCallback mCallBack;
+    private IAvailableCarDetailCallback mCallBack;
 
 
     @Override
-    public void fetchCarDetails(IAvailabeCarDetailCallback callback, String carID) {
+    public void fetchCarDetails(IAvailableCarDetailCallback callback, String carID) {
         mCallBack = callback;
 
         Retrofit.Builder builder = new Retrofit.Builder()

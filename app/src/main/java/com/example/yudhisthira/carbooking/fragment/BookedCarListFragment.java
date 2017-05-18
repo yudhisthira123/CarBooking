@@ -9,7 +9,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.yudhisthira.carbooking.Adapter.CarListAdapter;
@@ -25,7 +24,7 @@ import com.example.yudhisthira.carbooking.view.IAvailableCarListView;
 import java.util.List;
 
 /**
- * Created by yudhisthira on 16/05/17.
+ * Created by yudhisthira on 17/05/17.
  */
 
 public class BookedCarListFragment extends Fragment
@@ -51,11 +50,6 @@ public class BookedCarListFragment extends Fragment
      * Layout manager for recycler view
      */
     private RecyclerView.LayoutManager      mLayoutManager;
-
-    /**
-     * reference to ProgressBar
-     */
-    private ProgressBar                     mProgressBar;
 
     /**
      *  Reference to error text view
@@ -92,7 +86,6 @@ public class BookedCarListFragment extends Fragment
         mSwipeContainer = (SwipeRefreshLayout) v.findViewById(R.id.booked_car_swipe_container);
         mSwipeContainer.setOnRefreshListener(this);
 
-        mProgressBar = (ProgressBar)v.findViewById(R.id.progressBar);
         mErrorTextView = (TextView)v.findViewById(R.id.errorTextView);
 
         mRecyclerView = (RecyclerView)v.findViewById(R.id.recyclerView);
@@ -112,9 +105,8 @@ public class BookedCarListFragment extends Fragment
 
     @Override
     public void showProgress() {
-        if(null != mProgressBar) {
-            mProgressBar.setVisibility(View.VISIBLE);
-        }
+
+        mSwipeContainer.setRefreshing(true);
 
         if(null != mErrorTextView) {
             mErrorTextView.setVisibility(View.GONE);
@@ -130,13 +122,24 @@ public class BookedCarListFragment extends Fragment
         mSwipeContainer.setRefreshing(false);
 
         hideProgress();
+
+        if(null == mCarList || mCarList.size() < 1) {
+            mRecyclerView.setVisibility(View.GONE);
+        }
+        else {
+            mRecyclerView.setVisibility(View.VISIBLE);
+        }
+
+        if(null != mErrorTextView) {
+            mErrorTextView.setText("Empty List!!!");
+            mErrorTextView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
     public void showErrorMessage() {
-        if(null != mProgressBar) {
-            mProgressBar.setVisibility(View.GONE);
-        }
+
+        mRecyclerView.setVisibility(View.GONE);
 
         if(null != mErrorTextView) {
             mErrorTextView.setText("Fail to load Data!!!");
@@ -164,10 +167,6 @@ public class BookedCarListFragment extends Fragment
      * This function hide progress wheel
      */
     private void hideProgress() {
-        if(null != mProgressBar) {
-            mProgressBar.setVisibility(View.GONE);
-        }
-
         if(null != mErrorTextView) {
             mErrorTextView.setVisibility(View.GONE);
         }

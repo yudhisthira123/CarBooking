@@ -1,5 +1,6 @@
 package com.example.yudhisthira.carbooking.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -10,21 +11,34 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.example.yudhisthira.carbooking.Adapter.IMainActivityInterface;
+import com.example.yudhisthira.carbooking.data.Car;
+import com.example.yudhisthira.carbooking.data.CommonConstants;
+import com.example.yudhisthira.carbooking.database.BackendSyncScheduler;
+import com.example.yudhisthira.carbooking.database.DatabaseHelper;
+import com.example.yudhisthira.carbooking.database.DatabaseWrapper;
 import com.example.yudhisthira.carbooking.drawer.DrawerPresenterImpl;
+import com.example.yudhisthira.carbooking.fragment.BookedCarDetailsFragment;
 
+import java.util.List;
+
+/**
+ * The type Main activity.
+ */
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         DrawerPresenterImpl.DrawerView,
-        IMainActivityInterface{
+        IMainActivityInterface,
+        DatabaseHelper.IDatabaseListener{
 
-    private Toolbar toolbar;
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private DrawerPresenterImpl drawerPresenter;
+    private Toolbar                     toolbar;
+    private DrawerLayout                drawerLayout;
+    private NavigationView              navigationView;
+    private DrawerPresenterImpl         drawerPresenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +52,31 @@ public class MainActivity extends AppCompatActivity
 
         drawerPresenter = new DrawerPresenterImpl(this);
         navigationView.getMenu().performIdentifierAction(R.id.nav_available_cars, 0);
+
+        Intent intent = getIntent();
+
+        if(null != intent) {
+            handleNewIntent(intent);
+        }
+
+        BackendSyncScheduler.scheduleBackendSyncService(getApplicationContext(), 2000);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        BackendSyncScheduler.cancelBackendSyncService(getApplicationContext());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+
+        if(null != intent) {
+            handleNewIntent(intent);
+        }
+
+        super.onNewIntent(intent);
     }
 
     @Override
@@ -93,10 +132,38 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void replaceFragment(Fragment fragment) {
-        FragmentTransaction fm = getSupportFragmentManager().beginTransaction();
-        fm.replace(R.id.container,fragment);
-        fm.addToBackStack("MY_BACK_STACK");
-        fm.commit();
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.container,fragment);
+        ft.addToBackStack("MY_BACK_STACK");
+        ft.commit();
+    }
+
+    @Override
+    public void onSuccessOperation(int count) {
+
+    }
+
+    @Override
+    public void onSuccessList(List<Car> carList) {
+        Log.d("", "");
+
+        if(null != carList && carList.size() > 0) {
+            BookedCarDetailsFragment fragment = BookedCarDetailsFragment.newInstance();
+
+            Bundle b = new Bundle();
+            b.putSerializable(CommonConstants.CAR_OBJECT, carList.get(0));
+            fragment.setArguments(b);
+
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.replace(R.id.container,fragment);
+            ft.addToBackStack("MY_BACK_STACK");
+            ft.commit();
+        }
+    }
+
+    @Override
+    public void onFailure() {
+
     }
 
     // setup views
@@ -106,7 +173,7 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
     }
 
-    // create a ActionBarDrawerToggle
+
     private void setUpActionBarDrawerToggle() {
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this,
@@ -118,11 +185,23 @@ public class MainActivity extends AppCompatActivity
         toggle.syncState();
     }
 
-    // setting for BackPressed
     private void setBackPressed() {
         if (drawerLayout.isDrawerOpen(GravityCompat.START))
             drawerLayout.closeDrawer(GravityCompat.START);
         else
             super.onBackPressed();
+    }
+
+    /**
+     *
+     * @param intent
+     */
+    private void handleNewIntent(Intent intent) {
+        String action = intent.getAction();
+
+        if(CommonConstants.LAUNCH_BOOKING_DETAIL.equals(action)) {
+            String bookingID = intent.getStringExtra(CommonConstants.CAR_BOOKING_ID);
+            DatabaseWrapper.getBookingAsync(this, bookingID, this);
+        }
     }
 }

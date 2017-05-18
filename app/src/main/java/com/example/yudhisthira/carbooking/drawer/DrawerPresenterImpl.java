@@ -5,13 +5,24 @@ import android.support.v4.widget.DrawerLayout;
 import android.view.MenuItem;
 
 /**
- * Created by Jhordan on 13/10/15.
+ * The type Drawer presenter.
  */
 public class DrawerPresenterImpl implements DrawerPresenter, DrawerListener {
 
+    /**
+     * The Drawer interactor.
+     */
     DrawerInteractorImpl drawerInteractor;
+    /**
+     * The Drawer view.
+     */
     DrawerView drawerView;
 
+    /**
+     * Instantiates a new Drawer presenter.
+     *
+     * @param drawerView the drawer view
+     */
     public DrawerPresenterImpl(DrawerView drawerView) {
         this.drawerView = drawerView;
         drawerInteractor = new DrawerInteractorImpl();
@@ -27,7 +38,15 @@ public class DrawerPresenterImpl implements DrawerPresenter, DrawerListener {
         drawerView.navigateUsingTo(fragment);
     }
 
+    /**
+     * The interface Drawer view.
+     */
     public interface DrawerView {
+        /**
+         * Navigate using to.
+         *
+         * @param fragment the fragment
+         */
         void navigateUsingTo(Fragment fragment);
     }
 

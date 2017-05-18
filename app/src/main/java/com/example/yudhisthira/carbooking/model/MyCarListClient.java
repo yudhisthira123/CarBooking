@@ -10,7 +10,6 @@ import retrofit2.http.GET;
 import retrofit2.http.Path;
 
 /**
- * Created by yudhisthira on 12/05/17.
  *
  * This car list client interface by which we will request to Retrofit
  */

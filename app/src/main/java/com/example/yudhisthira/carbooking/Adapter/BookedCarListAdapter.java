@@ -15,15 +15,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by yudhisthira on 16/05/17.
+ * Created by yudhisthira on 17/05/17.
  */
-
 public class BookedCarListAdapter extends RecyclerView.Adapter<BookedCarListAdapter.ItemHolder>{
     private List<Car> mCarList = new ArrayList<>();
 
     private final Context mContext;
     private final CarListAdapter.CarItemListener mListener;
 
+    /**
+     * Instantiates a new Booked car list adapter.
+     *
+     * @param context  the context
+     * @param listener the listener
+     */
     public BookedCarListAdapter(Context context, CarListAdapter.CarItemListener listener) {
         mContext = context;
         mListener = listener;
@@ -56,17 +61,30 @@ public class BookedCarListAdapter extends RecyclerView.Adapter<BookedCarListAdap
         return size;
     }
 
+    /**
+     * Sets data.
+     *
+     * @param carList the car list
+     */
     public void setData(List<Car> carList) {
         mCarList = carList;
         notifyDataSetChanged();
     }
 
+    /**
+     * The type Item holder.
+     */
     public class ItemHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         private TextView mCarName;
         private TextView mCarDescription;
         private TextView mCarID;
 
+        /**
+         * Instantiates a new Item holder.
+         *
+         * @param v the v
+         */
         public ItemHolder(View v) {
             super(v);
 
@@ -88,7 +106,15 @@ public class BookedCarListAdapter extends RecyclerView.Adapter<BookedCarListAdap
         }
     }
 
+    /**
+     * The interface Car item listener.
+     */
     public interface CarItemListener {
+        /**
+         * On car item click.
+         *
+         * @param car the car
+         */
         void onCarItemClick(Car car);
     }
 }

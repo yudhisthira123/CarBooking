@@ -5,11 +5,11 @@ import com.example.yudhisthira.carbooking.model.IAvailableCarDetailModel;
 import com.example.yudhisthira.carbooking.view.IAvailableCarDetailView;
 
 /**
- * Created by yudhisthira on 16/05/17.
+ * Created by yudhisthira on 17/05/17.
  */
 
 public class AvailableCarDetailsPresenterImpl implements IAvailableCarDetailsPresenter,
-        IAvailableCarDetailModel.IAvailabeCarDetailCallback{
+        IAvailableCarDetailModel.IAvailableCarDetailCallback {
 
     private IAvailableCarDetailView mAvailableCarDetailView;
     private IAvailableCarDetailModel mAvailableCarDetailModel;

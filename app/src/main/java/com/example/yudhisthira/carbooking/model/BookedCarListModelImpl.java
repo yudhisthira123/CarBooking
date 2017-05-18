@@ -9,9 +9,8 @@ import com.example.yudhisthira.carbooking.database.DatabaseWrapper;
 import java.util.List;
 
 /**
- * Created by yudhisthira on 16/05/17.
+ * Created by yudhisthira on 17/05/17.
  */
-
 public class BookedCarListModelImpl implements ICarListModel, DatabaseHelper.IDatabaseListener{
 
     private List<Car> mCarList = null;

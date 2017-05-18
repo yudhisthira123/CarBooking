@@ -25,7 +25,6 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * Created by yudhisthira on 10/05/17.
  *
  * This is implementation class of ICarListModel
  */

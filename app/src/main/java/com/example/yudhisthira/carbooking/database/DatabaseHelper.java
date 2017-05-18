@@ -15,28 +15,56 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by yudhisthira on 16/05/17.
+ * Created by yudhisthira on 17/05/17.
  */
-
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-    private static final String     DATABASE_NAME  = "car_booking.db";
-    private static final int        SCHEMA_VERSION = 1;
-    private static DatabaseHelper   singleton      = null;
-    private Context                 mContext       = null;
+    private static final String     DATABASE_NAME           = "car_booking.db";
+    private static final int        SCHEMA_VERSION          = 1;
+    private static DatabaseHelper   singleton               = null;
+    private Context                 mContext                = null;
 
+    /**
+     * The interface Database listener.
+     */
     public interface IDatabaseListener {
+        /**
+         * On success operation.
+         *
+         * @param count the count
+         */
         public void onSuccessOperation(int count);
+
+        /**
+         * On success list.
+         *
+         * @param carList the car list
+         */
         public void onSuccessList(List<Car> carList);
+
+        /**
+         * On failure.
+         */
         public void onFailure();
     }
 
+    /**
+     * Instantiates a new Database helper.
+     *
+     * @param context the context
+     */
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, SCHEMA_VERSION);
 
         mContext = context;
     }
 
+    /**
+     * Gets instance.
+     *
+     * @param context the context
+     * @return the instance
+     */
     public static synchronized DatabaseHelper getInstance(Context context) {
         if(null == singleton) {
             singleton = new DatabaseHelper(context);
@@ -51,9 +79,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         try {
             db.beginTransaction();
 
-            db.execSQL("CREATE TABLE booked_content (car_name TEXT," + "car_id INTEGER," + "car_description TEXT,"
-                    + "car_short_description TEXT," + "car_booking_date TEXT," + "car_booking_time TEXT PRIMARY KEY NOT NULL,"
-                    + "car_booking_duration INTEGER," + "car_image_url TEXT);");
+//            db.execSQL("CREATE TABLE booked_content (car_name TEXT," + "car_id INTEGER PRIMARY KEY NOT NULL," + "car_description TEXT,"
+//                    + "car_short_description TEXT," + "car_booking_date TEXT," + "car_booking_time TEXT PRIMARY KEY NOT NULL,"
+//                    + "car_booking_duration INTEGER," + "car_image_url TEXT);");
+
+            db.execSQL("CREATE TABLE booked_content ( car_booking_id TEXT PRIMARY KEY NOT NULL," + "car_name TEXT," + "car_id INTEGER," + "car_description TEXT,"
+                    + "car_short_description TEXT," + "car_booking_date TEXT," + "car_booking_time TEXT,"
+                    + "car_booking_duration INTEGER," + "car_image_url TEXT," + "car_backend_sync_status INTEGER);");
 
             db.setTransactionSuccessful();
         }
@@ -72,11 +104,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     /**
+     * Add booking async.
      *
-     * @param car
+     * @param car       the car
+     * @param bookingID the booking id
+     * @param listener  the listener
      */
-    public void addBookingAsync(Car car, IDatabaseListener listener) {
-        AddBookingAsyncTask task = new AddBookingAsyncTask(car, listener);
+    public void addBookingAsync(Car car, String bookingID, IDatabaseListener listener) {
+        AddBookingAsyncTask task = new AddBookingAsyncTask(car, bookingID, listener);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -88,9 +123,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private class AddBookingAsyncTask extends AsyncTask<Void, Void, Boolean> {
         private Car car;
+        private String bookingID;
         private IDatabaseListener listener;
 
-        public AddBookingAsyncTask(Car car, IDatabaseListener listener) {
+        /**
+         * Instantiates a new Add booking async task.
+         *
+         * @param car       the car
+         * @param bookingID the booking id
+         * @param listener  the listener
+         */
+        public AddBookingAsyncTask(Car car, String bookingID, IDatabaseListener listener) {
+            this.bookingID = bookingID;
             this.car = car;
             this.listener = listener;
         }
@@ -101,6 +145,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             boolean bResult = false;
 
             String[] args = {
+                    bookingID,
                     car.getCarName(),
                     String.valueOf(car.getCarID()),
                     car.getCarDescription(),
@@ -108,24 +153,32 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     car.getCarBookingDate(),
                     car.getCarBookingTime(),
                     String.valueOf(car.getCarBookingDuration()),
-                    car.getImagePath()
+                    car.getImagePath(),
+                    String.valueOf(BackendSyncState.SYNC_STATE_PENDING)
             };
 
             try {
-                SQLiteDatabase db = getWritableDatabase();
-                db.execSQL(
-                        "INSERT OR REPLACE INTO booked_content (car_name,"
-                                + " car_id,"
-                                + " car_description,"
-                                + " car_short_description,"
-                                + " car_booking_date,"
-                                + " car_booking_time,"
-                                + " car_booking_duration,"
-                                + " car_image_url)"
-                                + " VALUES (?,?, ?, ?, ?, ?, ?, ?)",
-                        args);
 
-                bResult = true;
+                boolean isDuplicate = isDuplicateBoooking(car);
+
+                if(false == isDuplicate) {
+                    SQLiteDatabase db = getWritableDatabase();
+                    db.execSQL(
+                            "INSERT OR REPLACE INTO booked_content (car_booking_id,"
+                                    + " car_name,"
+                                    + " car_id,"
+                                    + " car_description,"
+                                    + " car_short_description,"
+                                    + " car_booking_date,"
+                                    + " car_booking_time,"
+                                    + " car_booking_duration,"
+                                    + " car_image_url,"
+                                    + " car_backend_sync_status)"
+                                    + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            args);
+
+                    bResult = true;
+                }
             }
             catch (Exception e) {
 
@@ -143,8 +196,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 listener.onFailure();
             }
         }
+
+        private boolean isDuplicateBoooking(Car car) {
+            String query = "SELECT * FROM booked_content WHERE car_booking_time= \"" + car.getCarBookingTime() +"\"" + "AND" + " car_id=" + car.getCarID();
+
+            //select * from booked_content where car_booking_time="ddd" AND car_id=12;
+
+            Cursor cursor = getReadableDatabase().rawQuery(query, null);
+
+            int count = cursor.getCount();
+
+            return (count > 0);
+        }
     }
 
+    /**
+     * Gets all booking async.
+     *
+     * @param listener the listener
+     */
     public void getAllBookingAsync(IDatabaseListener listener) {
         GetAllBookingAsyncTask task = new GetAllBookingAsyncTask(listener);
 
@@ -161,6 +231,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         private Cursor cursor = null;
         private IDatabaseListener listener;
 
+        /**
+         * Instantiates a new Get all booking async task.
+         *
+         * @param listener the listener
+         */
         public GetAllBookingAsyncTask(IDatabaseListener listener) {
             this.listener = listener;
         }
@@ -186,6 +261,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 do {
                     Car car = new Car();
 
+                    car.setCarBookingID(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_BOOKING_ID)));
                     car.setCarName(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_NAME)));
                     car.setCarDescription(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_DESCRIPTION)));
                     car.setCarShortDescription(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_SHORT_DESCRIPTION)));
@@ -209,8 +285,101 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public void deleteBooking(String bookingTime, IDatabaseListener listener) {
-        DeleteBookingAsyncTask task = new DeleteBookingAsyncTask(bookingTime, listener);
+    /**
+     * Gets booking async.
+     *
+     * @param bookingID the booking id
+     * @param listener  the listener
+     */
+    public void getBookingAsync(String bookingID, IDatabaseListener listener) {
+        GetBookingAsyncTask task = new GetBookingAsyncTask(bookingID, listener);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
+        else {
+            task.execute();
+        }
+    }
+
+    private class GetBookingAsyncTask extends AsyncTask<Void, Void, List<Car>> {
+
+        private Cursor                  cursor = null;
+        private String                  bookingID;
+        private IDatabaseListener       listener;
+
+        /**
+         * Instantiates a new Get booking async task.
+         *
+         * @param bookingID the booking id
+         * @param listener  the listener
+         */
+        public GetBookingAsyncTask(String bookingID, IDatabaseListener listener) {
+            this.bookingID = bookingID;
+            this.listener = listener;
+        }
+
+        @Override
+        protected List<Car> doInBackground(Void... params) {
+
+            String query = "SELECT * FROM booked_content WHERE car_booking_id= \"" + bookingID +"\"";
+
+            cursor = getReadableDatabase().rawQuery(query, null);
+
+
+            return parseCursor(cursor);
+        }
+
+        @Override
+        protected void onPostExecute(List<Car> carList) {
+            if (null != carList && carList.size() > 0) {
+                listener.onSuccessList(carList);
+            }
+            else {
+                listener.onFailure();
+            }
+        }
+
+        private List<Car> parseCursor(Cursor cursor) {
+            List<Car> carList = new ArrayList<>();
+            try {
+                cursor.moveToFirst();
+
+                do {
+                    Car car = new Car();
+
+                    car.setCarBookingID(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_BOOKING_ID)));
+                    car.setCarName(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_NAME)));
+                    car.setCarDescription(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_DESCRIPTION)));
+                    car.setCarShortDescription(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_SHORT_DESCRIPTION)));
+                    car.setCarID(cursor.getInt(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_ID)));
+                    car.setCarBookingDate(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_BOOKING_DATE)));
+                    car.setCarBookingTime(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_BOOKING_TIME)));
+                    car.setCarBookingDuration(cursor.getInt(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_BOOKING_DURATION)));
+                    car.setImagePath(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_IMAGE_URL)));
+
+                    carList.add(car);
+
+                }while (cursor.moveToNext() && cursor.getCount() > 0);
+            }
+            catch (Exception e) {
+
+            }
+
+            Collections.sort(carList);
+
+            return carList;
+        }
+    }
+
+    /**
+     * Delete booking.
+     *
+     * @param bookingID the booking id
+     * @param listener  the listener
+     */
+    public void deleteBooking(String bookingID, IDatabaseListener listener) {
+        DeleteBookingAsyncTask task = new DeleteBookingAsyncTask(bookingID, listener);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -222,11 +391,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private class DeleteBookingAsyncTask extends AsyncTask<Void,Void, Boolean> {
 
-        private String                  bookingTime;
+        private String                  bookingID;
         private IDatabaseListener       listener;
 
-        public DeleteBookingAsyncTask(String bookingTime, IDatabaseListener listener) {
-            this.bookingTime = bookingTime;
+        /**
+         * Instantiates a new Delete booking async task.
+         *
+         * @param bookingID the booking id
+         * @param listener  the listener
+         */
+        public DeleteBookingAsyncTask(String bookingID, IDatabaseListener listener) {
+            this.bookingID = bookingID;
             this.listener = listener;
         }
 
@@ -237,7 +412,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             try {
                 SQLiteDatabase db = getWritableDatabase();
-                result = db.delete("booked_content", "car_booking_time=?", new String[]{this.bookingTime}) > 0;
+                result = db.delete("booked_content", "car_booking_id=?", new String[]{this.bookingID}) > 0;
             }
             catch (SQLiteException ex) {
                 result = false;
@@ -254,6 +429,69 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             else {
                 listener.onFailure();
             }
+        }
+    }
+
+    /**
+     * Gets pending sync events.
+     *
+     * @return the pending sync events
+     */
+    public List<Car> getPendingSyncEvents() {
+        List<Car> carList = new ArrayList<>();
+
+        try {
+            String query = "SELECT * FROM booked_content WHERE car_backend_sync_status= \"" + BackendSyncState.SYNC_STATE_PENDING +"\"";
+
+            Cursor cursor = getReadableDatabase().rawQuery(query, null);
+
+            cursor.moveToFirst();
+
+            do {
+                Car car = new Car();
+
+                car.setCarBookingID(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_BOOKING_ID)));
+                car.setCarName(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_NAME)));
+                car.setCarDescription(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_DESCRIPTION)));
+                car.setCarShortDescription(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_SHORT_DESCRIPTION)));
+                car.setCarID(cursor.getInt(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_ID)));
+                car.setCarBookingDate(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_BOOKING_DATE)));
+                car.setCarBookingTime(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_BOOKING_TIME)));
+                car.setCarBookingDuration(cursor.getInt(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_BOOKING_DURATION)));
+                car.setImagePath(cursor.getString(cursor.getColumnIndex(DatabaseWrapper.CarColumns.CAR_IMAGE_URL)));
+
+                carList.add(car);
+
+            }while (cursor.moveToNext() && cursor.getCount() > 0);
+        }
+        catch (Exception e) {
+
+        }
+
+        return carList;
+    }
+
+    /**
+     * Update backend sync status.
+     *
+     * @param car        the car
+     * @param syncStatus the sync status
+     */
+    public void updateBackendSyncStatus(Car car, int syncStatus) {
+
+        SQLiteDatabase db = getWritableDatabase();
+
+        try {
+
+            String query = "UPDATE booked_content SET car_backend_sync_status = \"" + syncStatus + "\" WHERE car_booking_id= \"" + car.getCarBookingID() +"\"";
+
+            db.execSQL(query);
+        }
+        catch (Exception e) {
+
+        }
+        finally {
+            db.close();
         }
     }
 }

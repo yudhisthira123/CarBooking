@@ -5,7 +5,6 @@ import com.example.yudhisthira.carbooking.data.Car;
 import java.util.List;
 
 /**
- * Created by yudhisthira on 10/05/17.
  *
  * This is car list view interface. The UI component where we have to car list, has to implement this interface
  */

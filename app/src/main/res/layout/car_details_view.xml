@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -74,6 +80,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:visibility="visible"
+                android:enabled="false"
                 android:text="Select Date"/>
 
             <TextView
@@ -113,6 +120,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:visibility="visible"
+                android:enabled="false"
                 android:text="Select Time"/>
 
             <TextView
@@ -154,12 +162,14 @@
                 android:visibility="visible"
                 android:text="Book For days:"/>
 
-            <TextView
+            <EditText
                 android:id="@+id/available_car_days1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:visibility="visible"
+                android:enabled="false"
+                android:inputType="number"
                 android:text="1"/>
 
         </LinearLayout>
@@ -174,13 +184,38 @@
         android:layout_marginTop="@dimen/car_details_margin_top"
         android:background="@color/divider"/>
 
-    <Button
-        android:id="@+id/btnBookCar"
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:id="@+id/book_car_layt"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
-        android:layout_below="@id/view5"
-        android:text="@string/book_car"/>
+        android:layout_marginTop="@dimen/car_details_margin_top"
+        android:layout_below="@id/view5">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnBookCar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/book_car"/>
+
+            <CheckBox
+                android:id="@+id/custom_booking_check"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:visibility="visible"
+                android:text="custom booking"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
 
 </RelativeLayout>
+</ScrollView>

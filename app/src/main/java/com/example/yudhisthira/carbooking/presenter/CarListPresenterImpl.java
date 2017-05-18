@@ -9,7 +9,6 @@ import com.example.yudhisthira.carbooking.view.IAvailableCarListView;
 import java.util.List;
 
 /**
- * Created by yudhisthira on 10/05/17.
  *
  * This is implementation of ICarListPresenter
  */
