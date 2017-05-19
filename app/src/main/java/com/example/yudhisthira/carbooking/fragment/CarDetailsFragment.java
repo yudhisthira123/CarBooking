@@ -9,6 +9,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,10 +25,12 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.example.yudhisthira.carbooking.Adapter.IMainActivityInterface;
 import com.example.yudhisthira.carbooking.activity.BookingReceiver;
 import com.example.yudhisthira.carbooking.activity.R;
 import com.example.yudhisthira.carbooking.data.Car;
 import com.example.yudhisthira.carbooking.data.CommonConstants;
+import com.example.yudhisthira.carbooking.database.DatabaseErrorCodes;
 import com.example.yudhisthira.carbooking.database.DatabaseHelper;
 import com.example.yudhisthira.carbooking.database.DatabaseWrapper;
 import com.example.yudhisthira.carbooking.model.AvailableCarDetailModelImpl;
@@ -44,14 +48,14 @@ import java.util.UUID;
 /**
  * Created by yudhisthira on 17/05/17.
  */
-
 public class CarDetailsFragment extends Fragment
         implements IAvailableCarDetailView,
         View.OnClickListener,
         CompoundButton.OnCheckedChangeListener,
         DatePickerDialog.OnDateSetListener,
         TimePickerDialog.OnTimeSetListener,
-        DatabaseHelper.IDatabaseListener{
+        DatabaseHelper.IDatabaseListener,
+        TextWatcher{
 
     private int             mCardID;
     private ImageView       mImageView;
@@ -72,6 +76,13 @@ public class CarDetailsFragment extends Fragment
 
     private String          mUniqueID;
 
+    private IMainActivityInterface mMainActivityInterface;
+
+    /**
+     * New instance car details fragment.
+     *
+     * @return the car details fragment
+     */
     public static CarDetailsFragment newInstance() {
         return new CarDetailsFragment();
     }
@@ -90,6 +101,8 @@ public class CarDetailsFragment extends Fragment
         IAvailableCarDetailsPresenter presenter = new AvailableCarDetailsPresenterImpl(this, new AvailableCarDetailModelImpl());
         presenter.fetchCarsData("" + mCardID);
 
+        mMainActivityInterface = (IMainActivityInterface) getActivity();
+
         return v;
     }
 
@@ -102,6 +115,8 @@ public class CarDetailsFragment extends Fragment
         mCarInfo.setCarBookingTime(mCarTimeView1.getText().toString());
 
         mCarNameView1.setText(car.getCarName());
+
+        mMainActivityInterface.updateTitle(car.getCarName());
 
         StringBuffer string = new StringBuffer("http://sebastianf.net/intive/api/");
         string.append(car.getImagePath());
@@ -195,8 +210,53 @@ public class CarDetailsFragment extends Fragment
     }
 
     @Override
-    public void onFailure() {
-        Toast.makeText(getContext(), "Fail to book", Toast.LENGTH_SHORT).show();
+    public void onFailure(int errorCode) {
+
+        String message = null;
+
+        switch (errorCode) {
+            case DatabaseErrorCodes.DATABASE_FAILURE:
+                message = "Could not book car. Try after some time";
+                break;
+
+            case DatabaseErrorCodes.DATABASE_DUPLICATE:
+                message = "Booking is already there";
+                break;
+
+            default:
+                break;
+
+        }
+
+        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+    }
+
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+    }
+
+    @Override
+    public void afterTextChanged(Editable s) {
+        Log.d("","");
+
+        String number = s.toString();
+
+        if(s.length() > 0) {
+            int num = Integer.parseInt(number);
+            if (num >= 1 && num <= 7) {
+                //mCarDaysView1.setText("" + num);
+            }
+            else{
+                Toast.makeText(getActivity(), " Please enter the number in the range of 1-7", Toast.LENGTH_SHORT).show();
+                mCarDaysView1.setText("1");
+            }
+        }
     }
 
     private void bookCar() {
@@ -211,6 +271,7 @@ public class CarDetailsFragment extends Fragment
         mImageView = (ImageView)v.findViewById(R.id.available_car_image);
         mCarNameView1 = (TextView) v.findViewById(R.id.available_car_name1);
         mCarDaysView1 = (EditText) v.findViewById(R.id.available_car_days1);
+        mCarDaysView1.addTextChangedListener(this);
 
         mCarDateBtn = (Button) v.findViewById(R.id.available_car_date);
         mCarDateBtn.setOnClickListener(this);

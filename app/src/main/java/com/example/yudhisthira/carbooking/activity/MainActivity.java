@@ -14,11 +14,13 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.example.yudhisthira.carbooking.Adapter.IMainActivityInterface;
 import com.example.yudhisthira.carbooking.data.Car;
 import com.example.yudhisthira.carbooking.data.CommonConstants;
 import com.example.yudhisthira.carbooking.database.BackendSyncScheduler;
+import com.example.yudhisthira.carbooking.database.DatabaseErrorCodes;
 import com.example.yudhisthira.carbooking.database.DatabaseHelper;
 import com.example.yudhisthira.carbooking.database.DatabaseWrapper;
 import com.example.yudhisthira.carbooking.drawer.DrawerPresenterImpl;
@@ -58,6 +60,12 @@ public class MainActivity extends AppCompatActivity
         if(null != intent) {
             handleNewIntent(intent);
         }
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
 
         BackendSyncScheduler.scheduleBackendSyncService(getApplicationContext(), 2000);
     }
@@ -139,6 +147,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public void updateTitle(String title) {
+        getSupportActionBar().setTitle(title);
+    }
+
+    @Override
     public void onSuccessOperation(int count) {
 
     }
@@ -162,8 +175,28 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onFailure() {
+    public void onFailure(int errorCode) {
+        String message = null;
 
+        switch (errorCode) {
+            case DatabaseErrorCodes.DATABASE_FAILURE:
+                message = "Could not book car. Try after some time";
+                break;
+
+            case DatabaseErrorCodes.DATABASE_DUPLICATE:
+                message = "Booking is already there";
+                break;
+
+            case DatabaseErrorCodes.DATABASE_NO_ENTRY:
+                message = "Booking is not Available";
+                break;
+
+            default:
+                break;
+
+        }
+
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     // setup views

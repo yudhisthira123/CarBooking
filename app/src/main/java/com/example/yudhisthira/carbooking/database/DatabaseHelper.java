@@ -45,7 +45,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         /**
          * On failure.
          */
-        public void onFailure();
+        public void onFailure(int errorCode);
     }
 
     /**
@@ -90,7 +90,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.setTransactionSuccessful();
         }
         catch (Exception e) {
-
+            e.printStackTrace();
         }
         finally {
             db.endTransaction();
@@ -122,9 +122,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private class AddBookingAsyncTask extends AsyncTask<Void, Void, Boolean> {
-        private Car car;
-        private String bookingID;
-        private IDatabaseListener listener;
+        private Car                     car;
+        private String                  bookingID;
+        private IDatabaseListener       listener;
+        private boolean                 isDuplicate;
 
         /**
          * Instantiates a new Add booking async task.
@@ -159,7 +160,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             try {
 
-                boolean isDuplicate = isDuplicateBoooking(car);
+                isDuplicate = isDuplicateBoooking(car);
 
                 if(false == isDuplicate) {
                     SQLiteDatabase db = getWritableDatabase();
@@ -181,7 +182,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
             }
             catch (Exception e) {
-
+                e.printStackTrace();
             }
 
             return bResult;
@@ -193,7 +194,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 listener.onSuccessOperation(-1);
             }
             else {
-                listener.onFailure();
+                if(true == isDuplicate) {
+                    listener.onFailure(DatabaseErrorCodes.DATABASE_DUPLICATE);
+                }
+                else {
+                    listener.onFailure(DatabaseErrorCodes.DATABASE_FAILURE);
+                }
             }
         }
 
@@ -276,7 +282,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }while (cursor.moveToNext() && cursor.getCount() > 0);
             }
             catch (Exception e) {
-
+                e.printStackTrace();
             }
 
             Collections.sort(carList);
@@ -336,7 +342,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 listener.onSuccessList(carList);
             }
             else {
-                listener.onFailure();
+                listener.onFailure(DatabaseErrorCodes.DATABASE_NO_ENTRY);
             }
         }
 
@@ -363,7 +369,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }while (cursor.moveToNext() && cursor.getCount() > 0);
             }
             catch (Exception e) {
-
+                e.printStackTrace();
             }
 
             Collections.sort(carList);
@@ -416,6 +422,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
             catch (SQLiteException ex) {
                 result = false;
+
+                ex.printStackTrace();
             }
 
             return result;
@@ -427,7 +435,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 listener.onSuccessOperation(-1);
             }
             else {
-                listener.onFailure();
+                listener.onFailure(DatabaseErrorCodes.DATABASE_FAILURE);
             }
         }
     }
@@ -465,7 +473,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }while (cursor.moveToNext() && cursor.getCount() > 0);
         }
         catch (Exception e) {
-
+            e.printStackTrace();
         }
 
         return carList;
@@ -488,7 +496,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL(query);
         }
         catch (Exception e) {
-
+            e.printStackTrace();
         }
         finally {
             db.close();

@@ -50,7 +50,7 @@ public class BookedCarListModelImpl implements ICarListModel, DatabaseHelper.IDa
     }
 
     @Override
-    public void onFailure() {
+    public void onFailure(int errorCode) {
 
     }
 }

@@ -105,6 +105,8 @@ public class CarListFragment extends Fragment
 
         mMainActivityInterface = (IMainActivityInterface) getActivity();
 
+        mMainActivityInterface.updateTitle("CarBooking");
+
         return v;
     }
 

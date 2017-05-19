@@ -100,6 +100,8 @@ public class BookedCarListFragment extends Fragment
 
         mMainActivityInterface = (IMainActivityInterface) getActivity();
 
+        mMainActivityInterface.updateTitle("List of Booked Cars");
+
         return v;
     }
 

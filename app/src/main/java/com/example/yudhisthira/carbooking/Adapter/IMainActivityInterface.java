@@ -12,4 +12,11 @@ public interface IMainActivityInterface {
      * @param fragment the fragment
      */
     public void replaceFragment(Fragment fragment);
+
+    /**
+     * Update title.
+     *
+     * @param title the title
+     */
+    public void updateTitle(String title);
 }

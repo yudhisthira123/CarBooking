@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.yudhisthira.carbooking.Adapter.IMainActivityInterface;
 import com.example.yudhisthira.carbooking.activity.BookingReceiver;
 import com.example.yudhisthira.carbooking.activity.R;
 import com.example.yudhisthira.carbooking.data.Car;
@@ -42,6 +43,8 @@ public class BookedCarDetailsFragment extends Fragment
 
     private Button          mDeleteBookingBtn;
 
+    private IMainActivityInterface mMainActivityInterface;
+
     /**
      * New instance booked car details fragment.
      *
@@ -61,6 +64,10 @@ public class BookedCarDetailsFragment extends Fragment
 
         setUpViews(v);
         displayCarInfo();
+
+        mMainActivityInterface = (IMainActivityInterface) getActivity();
+
+        mMainActivityInterface.updateTitle(mCarInfo.getCarName());
 
         return v;
     }
@@ -93,7 +100,7 @@ public class BookedCarDetailsFragment extends Fragment
      *
      */
     @Override
-    public void onFailure() {
+    public void onFailure(int errorCode) {
 
     }
 
