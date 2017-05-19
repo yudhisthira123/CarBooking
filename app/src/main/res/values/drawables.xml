@@ -8,4 +8,5 @@
 
     <item name="notification_icon" type="drawable">@mipmap/ic_launcher</item>
     <item name="default_image_icon" type="drawable">@mipmap/ic_launcher</item>
+    <item name="github_image_icon" type="drawable">@mipmap/ic_github</item>
 </resources>

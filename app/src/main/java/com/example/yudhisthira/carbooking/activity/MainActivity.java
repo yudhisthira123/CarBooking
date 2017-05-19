@@ -1,6 +1,7 @@
 package com.example.yudhisthira.carbooking.activity;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -108,7 +109,7 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/yudhisthira123/CarBooking")));
         }
 
         return super.onOptionsItemSelected(item);
