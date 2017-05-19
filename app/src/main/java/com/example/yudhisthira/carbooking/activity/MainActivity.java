@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onFailure(int errorCode) {
-        String message = null;
+        String message = "Request Failed";
 
         switch (errorCode) {
             case DatabaseErrorCodes.DATABASE_FAILURE:

@@ -212,7 +212,7 @@ public class CarDetailsFragment extends Fragment
     @Override
     public void onFailure(int errorCode) {
 
-        String message = null;
+        String message = "Request Failed";
 
         switch (errorCode) {
             case DatabaseErrorCodes.DATABASE_FAILURE:
