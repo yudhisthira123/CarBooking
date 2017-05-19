@@ -141,6 +141,7 @@ public class CarDetailsFragment extends Fragment
             mMonth = c.get(Calendar.MONTH);
             mDay = c.get(Calendar.DAY_OF_MONTH);
             DatePickerDialog dp = new DatePickerDialog(getContext(), this, mYear, mMonth, mDay);
+            dp.getDatePicker().setMinDate(System.currentTimeMillis());
             dp.show();
 
         }
@@ -168,29 +169,92 @@ public class CarDetailsFragment extends Fragment
     public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
         Calendar c = Calendar.getInstance();
 
-        c.set(Calendar.YEAR, year);
-        c.set(Calendar.MONTH, month);
-        c.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+        if(mDay == dayOfMonth && mHour < c.get(Calendar.HOUR_OF_DAY) &&
+                mMinute < c.get(Calendar.MINUTE)) {
 
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        String date = df.format(c.getTime());
-        mCarDateView1.setText(date);
+            Toast.makeText(getContext(), "Can't pick past time. Please check current time and selected time", Toast.LENGTH_LONG).show();
+        }
+        else {
+            mDay = dayOfMonth;
+            c.set(Calendar.YEAR, year);
+            c.set(Calendar.MONTH, month);
+            c.set(Calendar.DAY_OF_MONTH, dayOfMonth);
 
-        mCarInfo.setCarBookingDate(date);
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            String date = df.format(c.getTime());
+            mCarDateView1.setText(date);
+
+            mCarInfo.setCarBookingDate(date);
+        }
+
+
+
+//        mDay = dayOfMonth;
+//
+//        c.set(Calendar.YEAR, year);
+//        c.set(Calendar.MONTH, month);
+//        c.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+//
+//        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+//        String date = df.format(c.getTime());
+//        mCarDateView1.setText(date);
+//
+//        mCarInfo.setCarBookingDate(date);
     }
 
     @Override
     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
         Calendar c = Calendar.getInstance();
 
-        c.set(Calendar.HOUR_OF_DAY, hourOfDay);
-        c.set(Calendar.MINUTE, minute);
+        if(mDay > c.get(Calendar.DAY_OF_MONTH)) {
+            //set time
 
-        SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
-        String time = df.format(c.getTime());
-        mCarTimeView1.setText(time);
+            mHour = hourOfDay;
+            mMinute = minute;
 
-        mCarInfo.setCarBookingTime(time);
+            c.set(Calendar.HOUR_OF_DAY, hourOfDay);
+            c.set(Calendar.MINUTE, minute);
+
+            SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+            String time = df.format(c.getTime());
+            mCarTimeView1.setText(time);
+
+            mCarInfo.setCarBookingTime(time);
+        }
+        else if(mDay == c.get(Calendar.DAY_OF_MONTH) && hourOfDay >= c.get(Calendar.HOUR_OF_DAY) &&
+                minute >= c.get(Calendar.MINUTE)) {
+
+            mHour = hourOfDay;
+            mMinute = minute;
+
+            c.set(Calendar.HOUR_OF_DAY, hourOfDay);
+            c.set(Calendar.MINUTE, minute);
+
+            SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+            String time = df.format(c.getTime());
+            mCarTimeView1.setText(time);
+
+            mCarInfo.setCarBookingTime(time);
+
+        }
+        else {
+            Toast.makeText(getContext(), "Can't pick past time", Toast.LENGTH_LONG).show();
+        }
+
+//        if(mDay == c.get(Calendar.DAY_OF_MONTH) && hourOfDay >= c.get(Calendar.HOUR_OF_DAY) && minute >= c.get(Calendar.MINUTE)) {
+//            c.set(Calendar.HOUR_OF_DAY, hourOfDay);
+//            c.set(Calendar.MINUTE, minute);
+//
+//            SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+//            String time = df.format(c.getTime());
+//            mCarTimeView1.setText(time);
+//
+//            mCarInfo.setCarBookingTime(time);
+//        }
+//        else {
+//            Toast.makeText(getContext(), "Can't pick past time", Toast.LENGTH_LONG).show();
+//        }
+
     }
 
     @Override
@@ -307,6 +371,10 @@ public class CarDetailsFragment extends Fragment
         String time = df.format(c.getTime());
         mCarTimeView1.setText(time);
 
+        mDay = c.get(Calendar.DAY_OF_MONTH);
+        mHour = c.get(Calendar.HOUR_OF_DAY);
+        mMinute = c.get(Calendar.MINUTE);
+
     }
 
     private void setAlarm() {
@@ -359,5 +427,9 @@ public class CarDetailsFragment extends Fragment
         mCarDateBtn.setEnabled(bEnable);
         mCarTimeBtn.setEnabled(bEnable);
         mCarDaysView1.setEnabled(bEnable);
+
+        if(false == bEnable) {
+            setDefaultDateAndTime();
+        }
     }
 }
