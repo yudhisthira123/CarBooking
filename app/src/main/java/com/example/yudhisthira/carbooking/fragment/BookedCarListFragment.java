@@ -133,7 +133,7 @@ public class BookedCarListFragment extends Fragment
         }
 
         if(null != mErrorTextView) {
-            mErrorTextView.setText("Empty List!!!");
+            mErrorTextView.setText("There is no booking available");
             mErrorTextView.setVisibility(View.VISIBLE);
         }
     }

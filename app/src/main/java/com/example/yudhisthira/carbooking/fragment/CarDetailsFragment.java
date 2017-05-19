@@ -220,7 +220,7 @@ public class CarDetailsFragment extends Fragment
                 break;
 
             case DatabaseErrorCodes.DATABASE_DUPLICATE:
-                message = "Booking is already there";
+                message = "This Car is already booked for this date and time";
                 break;
 
             default:
