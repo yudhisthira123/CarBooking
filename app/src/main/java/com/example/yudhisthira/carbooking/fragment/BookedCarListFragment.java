@@ -151,13 +151,17 @@ public class BookedCarListFragment extends Fragment
 
     @Override
     public void onCarItemClick(Car car) {
-        BookedCarDetailsFragment fragment = BookedCarDetailsFragment.newInstance();
 
-        Bundle b = new Bundle();
-        b.putSerializable(CommonConstants.CAR_OBJECT, car);
-        fragment.setArguments(b);
+        if(false == mSwipeContainer.isRefreshing()) {
 
-        mMainActivityInterface.replaceFragment(fragment);
+            BookedCarDetailsFragment fragment = BookedCarDetailsFragment.newInstance();
+
+            Bundle b = new Bundle();
+            b.putSerializable(CommonConstants.CAR_OBJECT, car);
+            fragment.setArguments(b);
+
+            mMainActivityInterface.replaceFragment(fragment);
+        }
     }
 
     @Override

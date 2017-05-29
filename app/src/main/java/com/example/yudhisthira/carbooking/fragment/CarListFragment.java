@@ -157,13 +157,16 @@ public class CarListFragment extends Fragment
 
     @Override
     public void onCarItemClick(Car car) {
-        CarDetailsFragment fragment = CarDetailsFragment.newInstance();
 
-        Bundle b = new Bundle();
-        b.putInt(CommonConstants.CAR_ID, car.getCarID());
-        fragment.setArguments(b);
+        if(false == mSwipeContainer.isRefreshing()) {
+            CarDetailsFragment fragment = CarDetailsFragment.newInstance();
 
-        mMainActivityInterface.replaceFragment(fragment);
+            Bundle b = new Bundle();
+            b.putInt(CommonConstants.CAR_ID, car.getCarID());
+            fragment.setArguments(b);
+
+            mMainActivityInterface.replaceFragment(fragment);
+        }
     }
 
     @Override
